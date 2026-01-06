@@ -7,6 +7,7 @@ from app.rag.ingest import save_uploaded_file
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.rag.ingest import process_document
 
 load_dotenv()
 
@@ -31,7 +32,11 @@ def health_check():
 @app.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
     file_path = save_uploaded_file(file)
+    result = process_document(file_path)
+
     return {
-        "message": "File uploaded successfully",
-        "path": file_path
+        "message": "File uploaded and processed",
+        "file_path": file_path,
+        "pages": result["pages"],
+        "chunks": result["chunks"]
     }
