@@ -1,0 +1,15 @@
+# Inside Root create an environment
+python -m venv .venv
+
+# Activate environment
+.venv\Scripts\activate
+
+# Install Python dependencies
+pip install -r backend/requirements.txt
+OR
+python -m pip install -r backend/requirements.txt
+
+# Run server locally
+uvicorn backend.app.main:app --reload
+OR
+python -m uvicorn backend.app.main:app --reload
