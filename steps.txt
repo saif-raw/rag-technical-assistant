@@ -14,3 +14,41 @@ uvicorn backend.app.main:app --reload
 OR
 python -m uvicorn backend.app.main:app --reload
 python -m uvicorn app.main:app --reload --app-dir backend
+
+
+
+
+TREE FUCNTION
+function tree {
+    param([string]$Path = ".", [int]$MaxDepth = 4)
+    
+    $Exclude = @('.git', '.venv', '__pycache__', 'node_modules', '.next', 'bin', 'obj')
+
+    function Show-Tree($CurrentPath, $Prefix, $Depth) {
+        if ($Depth -gt $MaxDepth) { return }
+        
+        $Items = Get-ChildItem -Path $CurrentPath | 
+                 Where-Object { $Exclude -notcontains $_.Name } | 
+                 Sort-Object PSIsContainer -Descending
+        
+        for ($i = 0; $i -lt $Items.Count; $i++) {
+            $Item = $Items[$i]
+            $IsLast = $i -eq ($Items.Count - 1)
+            $Connector = if ($IsLast) { "└── " } else { "├── " }
+            
+            Write-Host "$Prefix$Connector$($Item.Name)"
+            
+            if ($Item.PSIsContainer) {
+                $Indent = "│   "
+                if ($IsLast) { $Indent = "    " }
+                $NewPrefix = $Prefix + $Indent
+                Show-Tree $Item.FullName $NewPrefix ($Depth + 1)
+            }
+        }
+    }
+
+    if (Test-Path $Path) {
+        Write-Host (Get-Item $Path).Name -ForegroundColor Cyan
+        Show-Tree $Path "" 1
+    }
+}

@@ -5,3 +5,8 @@ python-multipart
 python-dotenv
 boto3
 pdfplumber
+faiss-cpu
+numpy
+pytesseract
+Pillow
+opencv-python

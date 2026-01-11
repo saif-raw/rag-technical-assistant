@@ -1,8 +1,8 @@
 # backend/app/rag/chunk.py
 from typing import List, Dict
 
-CHUNK_SIZE = 800      # characters
-CHUNK_OVERLAP = 150  # characters
+CHUNK_SIZE = 500      # characters
+CHUNK_OVERLAP = 100  # characters
 
 
 def chunk_text(pages: List[Dict]) -> List[Dict]:

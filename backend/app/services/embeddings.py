@@ -1,18 +1,30 @@
 # backend/app/services/embeddings.py
-from .bedrock import get_bedrock_client
+import boto3
 import json
-import os
+import numpy as np
 
-EMBEDDING_MODEL_ID = os.getenv("EMBEDDING_MODEL_ID")
+bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
+
+EMBEDDING_MODEL_ID = "amazon.titan-embed-text-v1"
 
 
-def generate_embedding(text: str) -> list:
+def embed_texts(texts):
     """
-    Generates vector embedding for a given text.
-    Actual call will be added later.
+    Generate embeddings for a list of texts using Titan.
     """
-    if not text:
-        raise ValueError("Text cannot be empty")
+    embeddings = []
 
-    # Placeholder for now
-    return []
+    for text in texts:
+        body = json.dumps({
+            "inputText": text
+        })
+
+        response = bedrock.invoke_model(
+            modelId=EMBEDDING_MODEL_ID,
+            body=body
+        )
+
+        result = json.loads(response["body"].read())
+        embeddings.append(result["embedding"])
+
+    return np.array(embeddings).astype("float32")
