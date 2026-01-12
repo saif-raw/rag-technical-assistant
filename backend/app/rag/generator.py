@@ -51,16 +51,10 @@ CRITICAL OUTPUT RULES (NON-NEGOTIABLE)
 ====================
 CITATION FORMAT (STRICT)
 ====================
-- Citations MUST be Markdown URL.
-- Citations MUST follow this EXACT format:
-    (Source: CITATION_N, Page: <PDF_PAGE>)
-- CITATION_N is a placeholder and will be resolved by the system.
-- Do NOT alter the citation structure.
-- Do NOT place citations at the end of sections or answers.
-- Citations MUST be inline Markdown links using the filename as the text.
-
-- Do NOT wrap it in brackets or parentheses yourself; the system will do that.
-- Use the CITATION_N that corresponds to the correct manual excerpt.
+- You MUST cite every claim.
+- Citations MUST follow this EXACT format: (Source: CITATION_N, Page: <PDF_PAGE>)
+- Example: "The motor requires 5W-30 oil (Source: CITATION_1, Page: 15)."
+- Do NOT attempt to write URLs. Use the CITATION_N placeholder only.
 
 ====================
 DIAGRAM RULES (STRICT)
@@ -101,19 +95,28 @@ ANSWER
 
 def resolve_citations(answer: str, citations: list) -> str:
     """
-    Resolve citation placeholders into clickable filenames.
-    Safely handles both 'index' and 'id' keys.
+    Resolve the specific (Source: CITATION_N, Page: X) format 
+    into a clean clickable Markdown link.
     """
     for c in citations:
-        # Use .get() to avoid KeyError if 'index' is missing
         idx = c.get('index') or c.get('id', '').replace('CITATION_', '')
-        placeholder = f"CITATION_{idx}"
         
-        # Enterprise-grade formatting
-        rendered = f"[{c['file_name']}](<{c['url']}>)"
+        # 1. This is what the LLM is actually writing based on your prompt:
+        # It looks like: (Source: CITATION_1, Page: 12)
+        target_placeholder = f"(Source: CITATION_{idx}, Page: {c['page']})"
         
-        # Replace the placeholder in the text
-        answer = answer.replace(placeholder, rendered)
+        # 2. This is the clean, professional replacement:
+        # It looks like: (Source: [Manual_Name.pdf](<URL>), Page: 12)
+        replacement = f"(Source: [{c['file_name']}](<{c['url']}>), Page: {c['page']})"
+        
+        # Perform the swap
+        if target_placeholder in answer:
+            answer = answer.replace(target_placeholder, replacement)
+        else:
+            # Fallback: If the LLM missed the "Page" part or changed formatting slightly,
+            # we still want to try and catch the raw ID.
+            raw_id = f"CITATION_{idx}"
+            answer = answer.replace(raw_id, f"[{c['file_name']}](<{c['url']}>)")
 
     return answer
 

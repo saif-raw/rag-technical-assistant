@@ -1,3 +1,4 @@
+// frontend/src/components/ChatPanel.jsx
 import { useState } from "react";
 import { askStream } from "../api/ragApi";
 import ReactMarkdown from "react-markdown";
