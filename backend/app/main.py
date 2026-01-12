@@ -1,16 +1,17 @@
 # backend/app/main.py
-
 import os
-from fastapi import UploadFile, File
+from fastapi import UploadFile, File, HTTPException
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, RedirectResponse
 from pydantic import BaseModel
+from urllib.parse import unquote
 
 from app.rag.ingest import save_uploaded_file, process_document
 from app.rag.retriever import retrieve_context
 from app.rag.generator import generate_answer, stream_answer
+from app.services.s3 import generate_presigned_pdf_url
 
 load_dotenv()
 
@@ -22,12 +23,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 class QueryRequest(BaseModel):
     query: str
@@ -76,3 +76,17 @@ async def ask_stream(payload: QueryRequest):
             "X-Accel-Buffering": "no"
         }
     )
+
+
+# PDF endpoint that redirects to presigned S3 URL
+@app.get("/pdf/{file_name}")
+def serve_pdf(file_name: str, page: int = 1):
+    """
+    Redirect to S3 presigned PDF URL.
+    """
+    try:
+        file_name = unquote(file_name)
+        presigned_url = generate_presigned_pdf_url(file_name, page)
+        return RedirectResponse(presigned_url)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"PDF not found: {e}")

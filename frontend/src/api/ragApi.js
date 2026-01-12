@@ -39,3 +39,13 @@ export async function askStream(question, onToken) {
     onToken(decoder.decode(value));
   }
 }
+
+export async function ask(question) {
+  const res = await fetch("http://localhost:8000/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query: question }),
+  });
+
+  return res.json();
+}

@@ -6,18 +6,26 @@ from botocore.exceptions import ClientError
 s3 = boto3.client("s3")
 BUCKET = os.getenv("S3_BUCKET_NAME")
 
-def generate_presigned_pdf_url(file_name: str, page: int, expires_in: int = 3600):
-    url = s3.generate_presigned_url(
-        ClientMethod="get_object",
-        Params={
-            "Bucket": BUCKET,
-            "Key": f"manuals/{file_name}",
-            "ResponseContentDisposition": "inline",
-            "ResponseContentType": "application/pdf"
-        },
-        ExpiresIn=expires_in
-    )
-    return f"{url}#page={page}"
+def generate_presigned_pdf_url(file_name: str, page: int, expires_in: int = 900):
+    s3_client = get_s3_client()
+    bucket = get_bucket_name()
+    
+    try:
+        url = s3_client.generate_presigned_url(
+            ClientMethod="get_object",
+            Params={
+                "Bucket": bucket,
+                "Key": f"manuals/{file_name}",
+                "ResponseContentDisposition": "inline",
+                "ResponseContentType": "application/pdf"
+            },
+            ExpiresIn=expires_in
+        )
+        # Append the page fragment AFTER the signature
+        return f"{url}#page={page}"
+    except Exception as e:
+        print(f"Error generating URL: {e}")
+        return "#"
 
 
 def get_s3_client():
