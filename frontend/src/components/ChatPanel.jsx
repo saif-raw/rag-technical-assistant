@@ -51,7 +51,7 @@ export default function ChatPanel({ disabled }) {
         placeholder={
           disabled
             ? "Ingestion in progress… please wait"
-            : "Ask a technical question (e.g., 'Show me the diagram for the heat exchanger')..."
+            : "Ask a technical question (e.g., 'What is the recommended oil type for the motor?')..."
         }
         value={question}
         onChange={(e) => setQuestion(e.target.value)}
