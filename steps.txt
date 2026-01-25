@@ -15,7 +15,9 @@ OR
 python -m uvicorn backend.app.main:app --reload
 python -m uvicorn app.main:app --reload --app-dir backend
 
-
+#Frontend
+cd frontend
+npm run dev
 
 
 TREE FUCNTION

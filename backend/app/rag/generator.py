@@ -61,7 +61,7 @@ ABSTENTION RULE (MANDATORY)
 ====================
 - If the provided excerpts do NOT contain sufficient information to answer a part of the question:
   - You MUST explicitly say: "The provided manuals do not contain information about this topic."
-  - You MUST provide some general knowledge stating clearly that the information is not available in the manuals.
+  - You MUST provide some general knowledge stating clearly "However, I can give you some general information".
   - You MUST NOT include citations for that part.
   - If the entire question cannot be answered, you MUST NOT include any fabricated information, citations, or even verified sources
 
@@ -104,31 +104,28 @@ ANSWER
 
 
 def resolve_citations(answer: str, citations: list) -> str:
-    """
-    Resolve the specific (Source: CITATION_N, Page: X) format 
-    into a clean clickable Markdown link.
-    """
     for c in citations:
-        idx = c.get('index') or c.get('id', '').replace('CITATION_', '')
-        
-        # 1. This is what the LLM is actually writing based on your prompt:
-        # It looks like: (Source: CITATION_1, Page: 12)
-        target_placeholder = f"(Source: CITATION_{idx}, Page: {c['page']})"
-        
-        # 2. This is the clean, professional replacement:
-        # It looks like: (Source: [Manual_Name.pdf](<URL>), Page: 12)
-        replacement = f"(Source: [{c['file_name']}](<{c['url']}>), Page: {c['page']})"
-        
-        # Perform the swap
-        if target_placeholder in answer:
-            answer = answer.replace(target_placeholder, replacement)
-        else:
-            # Fallback: If the LLM missed the "Page" part or changed formatting slightly,
-            # we still want to try and catch the raw ID.
-            raw_id = f"CITATION_{idx}"
-            answer = answer.replace(raw_id, f"[{c['file_name']}](<{c['url']}>)")
+        idx = c["index"]
+        page = c["page"]
+        file_name = c["file_name"]
+
+        presigned_url = generate_presigned_pdf_url(
+            file_name=file_name,
+            page=page
+        )
+
+        target = f"(Source: CITATION_{idx}, Page: {page})"
+
+        replacement = (
+            f"(Source: "
+            f"[{file_name}]({presigned_url}), "
+            f"Page: {page})"
+        )
+
+        answer = answer.replace(target, replacement)
 
     return answer
+
 
 def generate_answer(question: str):
     chunks = retrieve_context(question)
@@ -142,7 +139,6 @@ def generate_answer(question: str):
             "id": f"CITATION_{i+1}",
             "file_name": c["file_name"],
             "page": c["pdf_page"],
-            "url": generate_presigned_pdf_url(c["file_name"], c["pdf_page"])
         })
 
     final_answer = resolve_citations(raw_answer, citations)
@@ -159,21 +155,17 @@ def stream_answer(question: str):
     prompt = _build_prompt(question, chunks)
 
     buffer = ""
-    # We collect the full response to resolve citations before sending
-    # (Note: For true token-by-token streaming with citations, 
-    # we'd need a different approach, but this fix gets you running NOW)
     for token in stream_llm(prompt):
         buffer += token
 
     citations = []
     for i, c in enumerate(chunks):  
         citations.append({
-            "index": i + 1, # Added the missing index key here
+            "index": i + 1,
             "id": f"CITATION_{i+1}",
             "file_name": c["file_name"],
             "page": c["pdf_page"],
             "source_type": c["source_type"],
-            "url": generate_presigned_pdf_url(c["file_name"], c["pdf_page"])
         })
 
     final_answer = resolve_citations(buffer, citations)

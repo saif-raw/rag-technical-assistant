@@ -82,7 +82,7 @@ async def ask_stream(payload: QueryRequest):
 @app.get("/pdf/{file_name}")
 def serve_pdf(file_name: str, page: int = 1):
     """
-    Redirect to S3 presigned PDF URL.
+    Redirect to S3 presigned PDF URL
     """
     try:
         file_name = unquote(file_name)
